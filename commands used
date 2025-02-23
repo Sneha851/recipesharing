@@ -1,0 +1,18 @@
+npx create-vite@latest recipe-app --template react
+cd recipe-app
+npm install
+npm install axios react-router-dom tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+
+
+
+
+  @tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+npm run dev
