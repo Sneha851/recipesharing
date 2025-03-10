@@ -1,0 +1,88 @@
+import React, { useEffect, useState } from 'react';
+import socketIOClient from 'socket.io-client';
+
+const App = () => {
+    const [recipes, setRecipes] = useState([]);
+    const [newRecipe, setNewRecipe] = useState({ title: '', ingredients: [], instructions: '', createdBy: '' });
+
+    const socket = socketIOClient('http://localhost:5000');
+
+    useEffect(() => {
+        // Fetch recipes from server
+        const fetchRecipes = async () => {
+            const response = await fetch('http://localhost:5000/api/recipes');
+            const data = await response.json();
+            setRecipes(data);
+        };
+
+        fetchRecipes();
+
+        // Listen for new recipe real-time updates
+        socket.on('new-recipe', (recipe) => {
+            setRecipes(prevRecipes => [...prevRecipes, recipe]);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
+    // Add a new recipe
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const response = await fetch('http://localhost:5000/api/recipes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newRecipe),
+        });
+        const data = await response.json();
+        setNewRecipe({ title: '', ingredients: [], instructions: '', createdBy: '' });
+    };
+
+    return (
+        <div>
+            <h1>Recipe Sharing Platform</h1>
+            <form onSubmit={handleSubmit}>
+                <input
+                    type="text"
+                    value={newRecipe.title}
+                    onChange={(e) => setNewRecipe({ ...newRecipe, title: e.target.value })}
+                    placeholder="Recipe Title"
+                />
+                <textarea
+                    value={newRecipe.ingredients}
+                    onChange={(e) => setNewRecipe({ ...newRecipe, ingredients: e.target.value.split(',') })}
+                    placeholder="Ingredients (comma separated)"
+                />
+                <textarea
+                    value={newRecipe.instructions}
+                    onChange={(e) => setNewRecipe({ ...newRecipe, instructions: e.target.value })}
+                    placeholder="Instructions"
+                />
+                <input
+                    type="text"
+                    value={newRecipe.createdBy}
+                    onChange={(e) => setNewRecipe({ ...newRecipe, createdBy: e.target.value })}
+                    placeholder="Created By"
+                />
+                <button type="submit">Add Recipe</button>
+            </form>
+
+            <h2>All Recipes</h2>
+            <ul>
+                {recipes.map((recipe) => (
+                    <li key={recipe._id}>
+                        <h3>{recipe.title}</h3>
+                        <p>{recipe.ingredients.join(', ')}</p>
+                        <p>{recipe.instructions}</p>
+                        <p>Created by: {recipe.createdBy}</p>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
+export default App;
